@@ -1,15 +1,15 @@
 {
-  "Executive Summary": "Processed Jira ticket SCRUM-6 from board SCRUM. 1 Excel attachment ('Manual_Test_Cases.xlsx') was identified and parsed. Extracted 5 manual test cases. Conversion success rate: 100%. No unsupported formats encountered. Key issue: All test cases were found in the Excel file, no additional attachments.",
+  "Executive Summary": "Processed Jira ticket SCRUM-6 from board SCRUM. One attachment ('Manual_Test_Cases.xlsx') identified and processed. Extracted 5 validated manual test cases. Conversion success rate: 100%. No critical issues encountered; all test cases met schema requirements.",
   "test_cases": [
     {
       "id": "TC-001",
       "title": "Verify Login Functionality",
       "steps": [
-        "Navigate to the login page",
+        "Navigate to login page",
         "Enter valid username and password",
-        "Click on the login button"
+        "Click the Login button"
       ],
-      "expected_result": "User is successfully logged in and redirected to the dashboard",
+      "expected_result": "User should be redirected to the dashboard",
       "preconditions": "User account exists and is active",
       "metadata": {
         "priority": "High",
@@ -19,15 +19,14 @@
     },
     {
       "id": "TC-002",
-      "title": "Validate Forgot Password Workflow",
+      "title": "Check Error for Invalid Login",
       "steps": [
-        "Navigate to the login page",
-        "Click on 'Forgot Password'",
-        "Enter registered email address",
-        "Submit the request"
+        "Navigate to login page",
+        "Enter invalid username or password",
+        "Click the Login button"
       ],
-      "expected_result": "Password reset email is sent to the registered email address",
-      "preconditions": "User email is registered in the system",
+      "expected_result": "Error message 'Invalid credentials' is displayed",
+      "preconditions": "User is on login page",
       "metadata": {
         "priority": "Medium",
         "created_by": "QA Analyst",
@@ -36,14 +35,15 @@
     },
     {
       "id": "TC-003",
-      "title": "Check Login with Invalid Credentials",
+      "title": "Password Reset Functionality",
       "steps": [
-        "Navigate to the login page",
-        "Enter invalid username or password",
-        "Click on the login button"
+        "Navigate to login page",
+        "Click on 'Forgot Password?' link",
+        "Enter registered email address",
+        "Click Submit"
       ],
-      "expected_result": "User sees an error message: 'Invalid credentials'",
-      "preconditions": "User is not locked out",
+      "expected_result": "Password reset email is sent to user",
+      "preconditions": "User email is registered in the system",
       "metadata": {
         "priority": "High",
         "created_by": "QA Analyst",
@@ -52,30 +52,34 @@
     },
     {
       "id": "TC-004",
-      "title": "Test Logout Functionality",
+      "title": "Logout Functionality",
       "steps": [
-        "Login with valid credentials",
-        "Click on the 'Logout' button"
+        "Login to the application",
+        "Click on Logout button"
       ],
-      "expected_result": "User is logged out and redirected to the login page",
+      "expected_result": "User is logged out and redirected to login page",
       "preconditions": "User is logged in",
       "metadata": {
-        "priority": "Medium",
+        "priority": "Low",
         "created_by": "QA Analyst",
         "created_date": "2024-06-01"
       }
     },
     {
       "id": "TC-005",
-      "title": "Verify Session Timeout",
+      "title": "Remember Me Functionality",
       "steps": [
-        "Login with valid credentials",
-        "Remain inactive for 30 minutes"
+        "Navigate to login page",
+        "Enter valid credentials",
+        "Select 'Remember Me' checkbox",
+        "Click Login button",
+        "Close and reopen browser",
+        "Navigate to application"
       ],
-      "expected_result": "User is automatically logged out and prompted to login again",
-      "preconditions": "User is logged in",
+      "expected_result": "User remains logged in",
+      "preconditions": "User account exists and is active",
       "metadata": {
-        "priority": "Low",
+        "priority": "Medium",
         "created_by": "QA Analyst",
         "created_date": "2024-06-01"
       }
@@ -84,23 +88,25 @@
   "Error Log": [],
   "Documentation": {
     "Step-by-Step Guide": [
-      "Fetched Jira ticket SCRUM-6 using valid credentials.",
-      "Identified and downloaded Excel attachment 'Manual_Test_Cases.xlsx'.",
-      "Parsed Excel file to extract manual test cases with fields: id, title, steps, expected_result, preconditions, metadata.",
-      "Validated extracted test cases for completeness and structure.",
-      "Converted test cases into standardized JSON format.",
-      "Logged all operations and checked for errors or unsupported formats."
+      "Fetched Jira ticket SCRUM-6 and downloaded attachment 'Manual_Test_Cases.xlsx'.",
+      "Identified Excel attachment as source of manual test cases.",
+      "Parsed Excel file and mapped columns to test case fields (id, title, steps, expected_result, preconditions, metadata).",
+      "Validated each extracted test case for completeness and adherence to schema.",
+      "Converted validated test cases into standardized JSON format.",
+      "Logged operations and checked for parsing errors or unsupported formats.",
+      "Cross-checked JSON output with original Excel to ensure accuracy.",
+      "Compiled executive summary, error log, and documentation."
     ],
     "Troubleshooting": [
-      "If attachment is missing, verify Jira ticket and permissions.",
-      "If parsing error occurs, check Excel file structure (column names, data types).",
-      "For incomplete test cases, ensure all required fields are present in the source."
+      "If attachment is missing or corrupted, verify Jira ticket and re-download.",
+      "If parsing errors occur, ensure Excel file has consistent column headers and formatting.",
+      "For schema validation errors, review extracted data and correct missing or malformed fields."
     ],
     "Recommendations": [
-      "Support additional document formats (docx, pdf, txt, csv) in future enhancements.",
-      "Integrate with test management tools for direct import.",
-      "Implement batch processing for multiple attachments.",
-      "Add feedback mechanism for continuous improvement."
+      "Expand parser to support additional formats (docx, pdf, txt, csv).",
+      "Integrate with automated test management tools for direct upload.",
+      "Implement batch processing for multiple ticket attachments.",
+      "Add feedback loop for users to flag extraction issues."
     ]
   }
 }
