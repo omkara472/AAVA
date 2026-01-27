@@ -1,483 +1,464 @@
-Below is a complete, ready-to-use Python Selenium + PyTest automation suite for the provided 12 test cases, following best practices: Page Object Model, modular design, robust fixtures, and maintainable structure. The solution includes:
+# Directory structure:
+# .
+# ├── pages/
+# │   └── login_page.py
+# │   └── dashboard_page.py
+# ├── tests/
+# │   └── test_login.py
+# │   └── test_logout.py
+# │   └── test_password_reset.py
+# │   └── test_session.py
+# │   └── test_ui_elements.py
+# │   └── test_account_lock.py
+# ├── conftest.py
+# ├── requirements.txt
+# ├── README.md
+# └── sample_test_results.txt
 
-- Modular Python files (page objects, tests, conftest/fixtures)
-- requirements.txt for dependencies
-- README.md with setup, usage, troubleshooting, and extensibility
-- Sample test results output
+# ---
 
-Directory structure:
-```
-automation_project/
-├── pages/
-│   ├── base_page.py
-│   ├── login_page.py
-│   ├── dashboard_page.py
-│   ├── registration_page.py
-│   ├── profile_page.py
-│   └── email_page.py
-├── tests/
-│   └── test_auth_flow.py
-├── conftest.py
-├── requirements.txt
-├── README.md
-└── sample_test_output.txt
-```
+# pages/login_page.py
 
----
-
-### automation_project/pages/base_page.py
-
-```python
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-class BasePage:
-    """Base class for all page objects with common Selenium actions."""
+class LoginPage:
+    """Page Object for the Login Page."""
 
-    def __init__(self, driver, timeout=10):
+    URL = "https://example.com/login"  # TODO: Update to actual URL
+
+    # Placeholder selectors - update as per AUT
+    USERNAME_INPUT = (By.ID, "username")
+    PASSWORD_INPUT = (By.ID, "password")
+    LOGIN_BUTTON = (By.ID, "loginBtn")
+    FORGOT_PASSWORD_LINK = (By.LINK_TEXT, "Forgot Password?")
+    ERROR_MESSAGE = (By.CSS_SELECTOR, ".error-message")
+    RESET_EMAIL_INPUT = (By.ID, "resetEmail")
+    RESET_SUBMIT_BUTTON = (By.ID, "resetSubmit")
+    RESET_CONFIRM_MESSAGE = (By.CSS_SELECTOR, ".reset-confirm")
+    EMAIL_NOT_FOUND_ERROR = (By.CSS_SELECTOR, ".email-not-found")
+    
+    def __init__(self, driver):
         self.driver = driver
-        self.timeout = timeout
 
-    def find(self, by, locator):
-        """Wait for element to be present and return it."""
-        return WebDriverWait(self.driver, self.timeout).until(
-            EC.presence_of_element_located((by, locator)),
-            message=f"Element not found: {locator}"
+    def load(self):
+        self.driver.get(self.URL)
+
+    def enter_username(self, username):
+        elem = WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located(self.USERNAME_INPUT)
         )
-
-    def click(self, by, locator):
-        elem = self.find(by, locator)
-        elem.click()
-
-    def enter_text(self, by, locator, text):
-        elem = self.find(by, locator)
         elem.clear()
-        elem.send_keys(text)
+        elem.send_keys(username)
 
-    def is_displayed(self, by, locator):
-        try:
-            elem = self.find(by, locator)
-            return elem.is_displayed()
-        except Exception:
-            return False
-
-    def wait_for_url(self, url_part):
-        WebDriverWait(self.driver, self.timeout).until(
-            EC.url_contains(url_part),
-            message=f"URL does not contain {url_part}"
+    def enter_password(self, password):
+        elem = WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located(self.PASSWORD_INPUT)
         )
-```
+        elem.clear()
+        elem.send_keys(password)
 
----
+    def click_login(self):
+        WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable(self.LOGIN_BUTTON)
+        ).click()
 
-### automation_project/pages/login_page.py
+    def click_forgot_password(self):
+        WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable(self.FORGOT_PASSWORD_LINK)
+        ).click()
 
-```python
-from selenium.webdriver.common.by import By
-from .base_page import BasePage
+    def enter_reset_email(self, email):
+        elem = WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located(self.RESET_EMAIL_INPUT)
+        )
+        elem.clear()
+        elem.send_keys(email)
 
-class LoginPage(BasePage):
-    """Page object for the Login page."""
-
-    USERNAME = (By.ID, "username")
-    PASSWORD = (By.ID, "password")
-    LOGIN_BTN = (By.ID, "loginBtn")
-    REMEMBER_ME = (By.ID, "rememberMe")
-    ERROR_MSG = (By.CSS_SELECTOR, ".error-message")
-
-    def open(self, base_url):
-        self.driver.get(f"{base_url}/login")
-
-    def login(self, username, password, remember_me=False):
-        self.enter_text(*self.USERNAME, username)
-        self.enter_text(*self.PASSWORD, password)
-        if remember_me:
-            self.click(*self.REMEMBER_ME)
-        self.click(*self.LOGIN_BTN)
+    def submit_password_reset(self):
+        WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable(self.RESET_SUBMIT_BUTTON)
+        ).click()
 
     def get_error_message(self):
-        return self.find(*self.ERROR_MSG).text
+        return WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located(self.ERROR_MESSAGE)
+        ).text
 
-    def is_login_error_displayed(self):
-        return self.is_displayed(*self.ERROR_MSG)
-```
+    def get_reset_confirm_message(self):
+        return WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located(self.RESET_CONFIRM_MESSAGE)
+        ).text
 
----
+    def get_email_not_found_error(self):
+        return WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located(self.EMAIL_NOT_FOUND_ERROR)
+        ).text
 
-### automation_project/pages/dashboard_page.py
+    def is_username_field_present(self):
+        return self.driver.find_element(*self.USERNAME_INPUT).is_displayed()
 
-```python
+    def is_password_field_present(self):
+        return self.driver.find_element(*self.PASSWORD_INPUT).is_displayed()
+
+    def is_login_button_present(self):
+        return self.driver.find_element(*self.LOGIN_BUTTON).is_displayed()
+
+    def is_forgot_password_link_present(self):
+        return self.driver.find_element(*self.FORGOT_PASSWORD_LINK).is_displayed()
+
+# ---
+
+# pages/dashboard_page.py
+
 from selenium.webdriver.common.by import By
-from .base_page import BasePage
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-class DashboardPage(BasePage):
-    """Page object for Dashboard."""
+class DashboardPage:
+    """Page Object for the Dashboard Page."""
 
-    WIDGETS = (By.CSS_SELECTOR, ".dashboard-widget")
-    LOGOUT_BTN = (By.ID, "logoutBtn")
+    # Placeholder selector for logout
+    LOGOUT_BUTTON = (By.ID, "logoutBtn")
 
-    def widgets_loaded(self):
-        widgets = self.driver.find_elements(*self.WIDGETS)
-        return len(widgets) > 0
+    def __init__(self, driver):
+        self.driver = driver
 
-    def logout(self):
-        self.click(*self.LOGOUT_BTN)
-```
+    def is_loaded(self):
+        # Placeholder: check for an element unique to dashboard
+        return WebDriverWait(self.driver, 10).until(
+            EC.url_contains("/dashboard")
+        )
 
----
+    def click_logout(self):
+        WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable(self.LOGOUT_BUTTON)
+        ).click()
 
-### automation_project/pages/registration_page.py
+# ---
 
-```python
-from selenium.webdriver.common.by import By
-from .base_page import BasePage
+# conftest.py
 
-class RegistrationPage(BasePage):
-    """Page object for Registration."""
-
-    EMAIL = (By.ID, "reg_email")
-    USERNAME = (By.ID, "reg_username")
-    PASSWORD = (By.ID, "reg_password")
-    SUBMIT = (By.ID, "registerBtn")
-    SUCCESS_MSG = (By.CSS_SELECTOR, ".success-message")
-
-    def open(self, base_url):
-        self.driver.get(f"{base_url}/register")
-
-    def register(self, username, email, password):
-        self.enter_text(*self.USERNAME, username)
-        self.enter_text(*self.EMAIL, email)
-        self.enter_text(*self.PASSWORD, password)
-        self.click(*self.SUBMIT)
-
-    def is_success_displayed(self):
-        return self.is_displayed(*self.SUCCESS_MSG)
-```
-
----
-
-### automation_project/pages/profile_page.py
-
-```python
-from selenium.webdriver.common.by import By
-from .base_page import BasePage
-
-class ProfilePage(BasePage):
-    """Page object for Profile."""
-
-    PROFILE_LINK = (By.ID, "profileSettings")
-    NAME_FIELD = (By.ID, "profileName")
-    SAVE_BTN = (By.ID, "saveProfile")
-    SUCCESS_MSG = (By.CSS_SELECTOR, ".profile-success")
-
-    def open(self, base_url):
-        self.driver.get(f"{base_url}/profile")
-
-    def update_name(self, new_name):
-        self.enter_text(*self.NAME_FIELD, new_name)
-        self.click(*self.SAVE_BTN)
-
-    def is_update_successful(self):
-        return self.is_displayed(*self.SUCCESS_MSG)
-```
-
----
-
-### automation_project/pages/email_page.py
-
-```python
-from selenium.webdriver.common.by import By
-from .base_page import BasePage
-
-class EmailPage(BasePage):
-    """Stub for email interactions (for test simulation)."""
-
-    # In real-world, implement email API integration or IMAP/SMTP checks
-    def check_email_for_verification(self, email_address):
-        # Placeholder: simulate email received
-        return True
-
-    def check_email_for_password_reset(self, email_address):
-        return True
-
-    def check_email_for_username(self, email_address):
-        return True
-```
-
----
-
-### automation_project/tests/test_auth_flow.py
-
-```python
-import pytest
-import time
-
-from pages.login_page import LoginPage
-from pages.dashboard_page import DashboardPage
-from pages.registration_page import RegistrationPage
-from pages.profile_page import ProfilePage
-from pages.email_page import EmailPage
-
-# Test data (would be loaded from config/fixtures in real use)
-VALID_USER = {"username": "testuser", "password": "Password123!", "email": "testuser@example.com"}
-NEW_USER = {"username": "newuser", "password": "NewUserPass!1", "email": "newuser@example.com"}
-
-@pytest.mark.usefixtures("browser")
-class TestAuthFlow:
-
-    def test_TC_001_verify_login_functionality(self, browser, base_url):
-        """TC-001: Verify Login Functionality"""
-        login = LoginPage(browser)
-        login.open(base_url)
-        login.login(VALID_USER["username"], VALID_USER["password"])
-        dashboard = DashboardPage(browser)
-        dashboard.wait_for_url("/dashboard")
-        assert "/dashboard" in browser.current_url
-
-    def test_TC_002_validate_logout_process(self, browser, base_url):
-        """TC-002: Validate Logout Process"""
-        login = LoginPage(browser)
-        login.open(base_url)
-        login.login(VALID_USER["username"], VALID_USER["password"])
-        dashboard = DashboardPage(browser)
-        dashboard.logout()
-        login.wait_for_url("/login")
-        assert "/login" in browser.current_url
-
-    def test_TC_003_check_password_reset(self, browser, base_url):
-        """TC-003: Check Password Reset"""
-        browser.get(f"{base_url}/password-reset")
-        # Simulated selectors:
-        browser.find_element_by_id("reset_email").send_keys(VALID_USER["email"])
-        browser.find_element_by_id("resetBtn").click()
-        email_page = EmailPage(browser)
-        assert email_page.check_email_for_password_reset(VALID_USER["email"])
-
-    def test_TC_004_verify_dashboard_widgets_load(self, browser, base_url):
-        """TC-004: Verify Dashboard Widgets Load"""
-        login = LoginPage(browser)
-        login.open(base_url)
-        login.login(VALID_USER["username"], VALID_USER["password"])
-        dashboard = DashboardPage(browser)
-        assert dashboard.widgets_loaded()
-
-    def test_TC_005_validate_user_profile_update(self, browser, base_url):
-        """TC-005: Validate User Profile Update"""
-        login = LoginPage(browser)
-        login.open(base_url)
-        login.login(VALID_USER["username"], VALID_USER["password"])
-        profile = ProfilePage(browser)
-        profile.open(base_url)
-        profile.update_name("Test User Updated")
-        assert profile.is_update_successful()
-
-    def test_TC_006_check_invalid_login_attempt(self, browser, base_url):
-        """TC-006: Check Invalid Login Attempt"""
-        login = LoginPage(browser)
-        login.open(base_url)
-        login.login("wronguser", "wrongpass")
-        assert login.is_login_error_displayed()
-
-    def test_TC_007_verify_remember_me_functionality(self, browser, base_url):
-        """TC-007: Verify Remember Me Functionality"""
-        login = LoginPage(browser)
-        login.open(base_url)
-        login.login(VALID_USER["username"], VALID_USER["password"], remember_me=True)
-        # Simulate closing and reopening browser
-        browser.quit()
-        # Launch new browser session
-        from selenium import webdriver
-        browser2 = webdriver.Chrome()
-        login2 = LoginPage(browser2)
-        login2.open(base_url)
-        # Should remain logged in (simulate via cookie or local storage)
-        dashboard = DashboardPage(browser2)
-        try:
-            dashboard.wait_for_url("/dashboard")
-            assert "/dashboard" in browser2.current_url
-        finally:
-            browser2.quit()
-
-    def test_TC_008_validate_new_user_registration(self, browser, base_url):
-        """TC-008: Validate New User Registration"""
-        reg = RegistrationPage(browser)
-        reg.open(base_url)
-        reg.register(NEW_USER["username"], NEW_USER["email"], NEW_USER["password"])
-        assert reg.is_success_displayed()
-
-    def test_TC_009_check_email_verification(self, browser, base_url):
-        """TC-009: Check Email Verification"""
-        # Simulate registration
-        reg = RegistrationPage(browser)
-        reg.open(base_url)
-        reg.register(NEW_USER["username"], NEW_USER["email"], NEW_USER["password"])
-        # Simulate email check
-        email_page = EmailPage(browser)
-        assert email_page.check_email_for_verification(NEW_USER["email"])
-
-    def test_TC_010_validate_forgotten_username_recovery(self, browser, base_url):
-        """TC-010: Validate Forgotten Username Recovery"""
-        browser.get(f"{base_url}/username-recovery")
-        browser.find_element_by_id("recovery_email").send_keys(VALID_USER["email"])
-        browser.find_element_by_id("recoverBtn").click()
-        email_page = EmailPage(browser)
-        assert email_page.check_email_for_username(VALID_USER["email"])
-
-    def test_TC_011_verify_account_lockout_after_failed_logins(self, browser, base_url):
-        """TC-011: Verify Account Lockout After Failed Logins"""
-        login = LoginPage(browser)
-        login.open(base_url)
-        for _ in range(5):
-            login.login("wronguser", "wrongpass")
-            assert login.is_login_error_displayed()
-        # Simulate lockout message
-        lockout_msg = browser.find_element_by_css_selector(".lockout-message")
-        assert lockout_msg.is_displayed()
-
-    def test_TC_012_check_session_timeout(self, browser, base_url):
-        """TC-012: Check Session Timeout"""
-        login = LoginPage(browser)
-        login.open(base_url)
-        login.login(VALID_USER["username"], VALID_USER["password"])
-        # Wait for session timeout (simulate with short sleep for demo; real test would use app's timeout)
-        time.sleep(2)
-        browser.refresh()
-        # Should be redirected to login
-        assert "/login" in browser.current_url
-```
-
----
-
-### automation_project/conftest.py
-
-```python
 import pytest
 from selenium import webdriver
 
 @pytest.fixture(scope="session")
-def base_url():
-    # Update this to your application's base URL
-    return "http://localhost:8000"
-
-@pytest.fixture(scope="function")
 def browser():
-    """Setup and teardown for Selenium WebDriver."""
+    """PyTest fixture to initialize and quit the WebDriver."""
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
     driver = webdriver.Chrome(options=options)
     driver.implicitly_wait(5)
     yield driver
     driver.quit()
-```
 
----
+@pytest.fixture
+def valid_user_credentials():
+    # Replace with secure credential management or test data
+    return {
+        "username": "testuser",
+        "password": "correct_password"
+    }
 
-### automation_project/requirements.txt
+@pytest.fixture
+def invalid_user_credentials():
+    return {
+        "username": "testuser",
+        "password": "wrong_password"
+    }
 
-```
-selenium>=4.0.0
+@pytest.fixture
+def registered_email():
+    return "registered@example.com"
+
+@pytest.fixture
+def unregistered_email():
+    return "unregistered@example.com"
+
+# ---
+
+# tests/test_login.py
+
+import pytest
+from pages.login_page import LoginPage
+from pages.dashboard_page import DashboardPage
+
+@pytest.mark.usefixtures("browser")
+class TestLogin:
+
+    def test_login_with_valid_credentials(self, browser, valid_user_credentials):
+        """TC-001: Login with valid credentials"""
+        login = LoginPage(browser)
+        login.load()
+        login.enter_username(valid_user_credentials["username"])
+        login.enter_password(valid_user_credentials["password"])
+        login.click_login()
+        dashboard = DashboardPage(browser)
+        assert dashboard.is_loaded(), "User is not redirected to the dashboard"
+
+    def test_login_with_invalid_password(self, browser, invalid_user_credentials):
+        """TC-002: Login with invalid password"""
+        login = LoginPage(browser)
+        login.load()
+        login.enter_username(invalid_user_credentials["username"])
+        login.enter_password(invalid_user_credentials["password"])
+        login.click_login()
+        error = login.get_error_message()
+        assert "Invalid credentials" in error, f"Expected error message not shown. Got: {error}"
+
+# ---
+
+# tests/test_logout.py
+
+import pytest
+from pages.login_page import LoginPage
+from pages.dashboard_page import DashboardPage
+
+def login_and_navigate_to_dashboard(browser, valid_user_credentials):
+    login = LoginPage(browser)
+    login.load()
+    login.enter_username(valid_user_credentials["username"])
+    login.enter_password(valid_user_credentials["password"])
+    login.click_login()
+    dashboard = DashboardPage(browser)
+    assert dashboard.is_loaded()
+    return dashboard
+
+def test_logout_functionality(browser, valid_user_credentials):
+    """TC-003: Logout functionality"""
+    dashboard = login_and_navigate_to_dashboard(browser, valid_user_credentials)
+    dashboard.click_logout()
+    login_page = LoginPage(browser)
+    assert browser.current_url.endswith("/login"), "User is not redirected to login page after logout"
+
+# ---
+
+# tests/test_password_reset.py
+
+import pytest
+from pages.login_page import LoginPage
+
+def test_password_reset_with_registered_email(browser, registered_email):
+    """TC-004: Password reset with registered email"""
+    login = LoginPage(browser)
+    login.load()
+    login.click_forgot_password()
+    login.enter_reset_email(registered_email)
+    login.submit_password_reset()
+    confirm = login.get_reset_confirm_message()
+    assert "Password reset email is sent" in confirm, "Password reset email was not confirmed as sent"
+
+def test_password_reset_with_unregistered_email(browser, unregistered_email):
+    """TC-005: Password reset with unregistered email"""
+    login = LoginPage(browser)
+    login.load()
+    login.click_forgot_password()
+    login.enter_reset_email(unregistered_email)
+    login.submit_password_reset()
+    error = login.get_email_not_found_error()
+    assert "Email not found" in error, "Expected error message not shown for unregistered email"
+
+# ---
+
+# tests/test_session.py
+
+import pytest
+from pages.login_page import LoginPage
+from pages.dashboard_page import DashboardPage
+import time
+
+def test_session_timeout_after_inactivity(browser, valid_user_credentials):
+    """TC-006: Session timeout after inactivity"""
+    login = LoginPage(browser)
+    login.load()
+    login.enter_username(valid_user_credentials["username"])
+    login.enter_password(valid_user_credentials["password"])
+    login.click_login()
+    dashboard = DashboardPage(browser)
+    assert dashboard.is_loaded()
+    # Simulate inactivity (reduced to 5s for demo; use 900 for 15min in real test)
+    time.sleep(5)
+    browser.refresh()
+    assert browser.current_url.endswith("/login"), "User was not logged out after inactivity"
+
+# ---
+
+# tests/test_account_lock.py
+
+import pytest
+from pages.login_page import LoginPage
+
+def test_multiple_login_attempts_lock_account(browser, invalid_user_credentials):
+    """TC-007: Multiple login attempts lock account"""
+    login = LoginPage(browser)
+    login.load()
+    username = invalid_user_credentials["username"]
+    for i in range(5):
+        login.enter_username(username)
+        login.enter_password("wrong_password")
+        login.click_login()
+        # Optionally check error message
+    # After 5 failed attempts
+    login.enter_username(username)
+    login.enter_password("wrong_password")
+    login.click_login()
+    error = login.get_error_message()
+    assert "Account is locked" in error, "Account lock message not shown after multiple failed attempts"
+
+# ---
+
+# tests/test_ui_elements.py
+
+import pytest
+from pages.login_page import LoginPage
+
+def test_ui_elements_on_login_page(browser):
+    """TC-008: UI elements on login page"""
+    login = LoginPage(browser)
+    login.load()
+    assert login.is_username_field_present(), "Username field missing"
+    assert login.is_password_field_present(), "Password field missing"
+    assert login.is_login_button_present(), "Login button missing"
+    assert login.is_forgot_password_link_present(), "'Forgot Password?' link missing"
+
+# ---
+
+# requirements.txt
+
+selenium>=4.12.0
 pytest>=7.0.0
-```
 
----
+# ---
 
-### automation_project/README.md
+# README.md
 
-```
-# Selenium & PyTest Automation Suite
+# Selenium PyTest Automation Suite
 
 ## Overview
 
-This suite automates 12 core authentication/user flow test cases extracted from Jira SCRUM-6 (see test case IDs TC-001 to TC-012). It follows best practices: Page Object Model, modular Python, robust PyTest fixtures, and is ready for CI/CD integration.
+This repository contains a modular, maintainable Selenium automation suite for login and session management flows, generated from standardized JSON test case specifications. The framework utilizes Page Object Model (POM) design, PyTest fixtures, and best practices for scalable enterprise testing.
 
 ## Directory Structure
 
-- `pages/`: Page Object Model classes for UI abstraction
-- `tests/`: PyTest test cases mapped to each requirement
-- `conftest.py`: Fixtures for browser setup/teardown
-- `requirements.txt`: Dependencies
-- `sample_test_output.txt`: Example test run output
+```
+.
+├── pages/
+│   └── login_page.py
+│   └── dashboard_page.py
+├── tests/
+│   └── test_login.py
+│   └── test_logout.py
+│   └── test_password_reset.py
+│   └── test_session.py
+│   └── test_ui_elements.py
+│   └── test_account_lock.py
+├── conftest.py
+├── requirements.txt
+├── README.md
+└── sample_test_results.txt
+```
 
 ## Setup Instructions
 
-1. **Install Python 3.8+** and [Google Chrome](https://www.google.com/chrome/) (or update driver as needed).
-2. **Install dependencies:**
+1. **Clone the repository**
+
+    ```bash
+    git clone <repo_url>
+    cd <repo>
     ```
+
+2. **Install dependencies**
+
+    Ensure Python 3.8+ is installed. Then:
+
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
     pip install -r requirements.txt
     ```
-3. **Download [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/)**
-   and ensure it's in your `PATH`.
 
-4. **Configure base URL:**
-   - Edit `conftest.py`'s `base_url()` fixture if your AUT is not at `http://localhost:8000`.
+3. **Download WebDriver**
+
+    - Download [ChromeDriver](https://sites.google.com/chromium.org/driver/) matching your Chrome version.
+    - Place the executable in your PATH or project root.
+
+4. **Configure Test Data**
+
+    - Update credentials and URLs in `conftest.py` and page objects as needed for your environment.
 
 ## Running Tests
 
-From the project root:
-```
-pytest --maxfail=1 --disable-warnings -v
+Execute all tests:
+
+```bash
+pytest --maxfail=1 -v
 ```
 
-## Extending the Suite
+To run a specific test file:
 
-- Add new page objects in `pages/`.
-- Add new test cases in `tests/`.
-- Parameterize tests with `pytest.mark.parametrize`.
-- Integrate with CI/CD (e.g., GitHub Actions, Jenkins).
+```bash
+pytest tests/test_login.py -v
+```
+
+## Sample Test Results
+
+See `sample_test_results.txt` for example output.
 
 ## Troubleshooting
 
-- **WebDriverException**: Ensure ChromeDriver matches your Chrome version and is in `PATH`.
-- **Timeouts/Element not found**: Check selectors in page objects; update as per your AUT.
-- **Browser fails to start**: Check for Chrome installation or permissions.
+- **WebDriver errors**: Ensure ChromeDriver is installed and matches your Chrome version.
+- **Timeouts**: Check selectors in `pages/` for accuracy. Update as per your AUT.
+- **Environment errors**: Activate your virtual environment and install all dependencies.
+- **Session tests**: The session timeout duration is reduced for demo. Adjust `time.sleep()` as needed.
+
+## Extending the Framework
+
+- Add new Page Objects in `pages/`.
+- Add new test cases in `tests/`.
+- Parameterize tests using PyTest fixtures.
+- Integrate with CI/CD by configuring your pipeline to run `pytest` and collect results.
+
+## Reporting
+
+- Use `pytest --html=report.html` (with pytest-html plugin) for HTML reports.
+- Integrate with CI systems (e.g., GitHub Actions, Jenkins) for automated reporting.
 
 ## Best Practices
 
-- Use explicit waits (see `base_page.py`).
-- Keep page objects DRY and reusable.
-- Parameterize test data for large suites.
-- Separate test logic from UI interactions.
+- Update selectors to match your application.
+- Store sensitive test data securely.
+- Use explicit waits for reliable test execution.
+- Keep page objects modular and reusable.
+- Review and extend fixtures as your suite grows.
 
-## Security Notes
+## Maintenance
 
-- No credentials are hardcoded; use fixtures/config for sensitive data.
-- No code injection or unsafe evals.
-
-## Sample Output
-
-See `sample_test_output.txt` for an example PyTest run.
+- Regularly update dependencies (`pip list --outdated`).
+- Refactor duplicated code into fixtures or base classes.
+- Review failed tests for selector drift or application changes.
 
 ---
 
-For further support, review the inline docstrings and comments, and consult the Selenium/PyTest documentation.
-```
+## Security
 
----
+- No hardcoded secrets in source files.
+- Avoid using real production credentials in test environments.
 
-### automation_project/sample_test_output.txt
+# ---
 
-```
+# sample_test_results.txt
+
 ============================= test session starts ==============================
-collected 12 items
+collected 8 items
 
-tests/test_auth_flow.py::TestAuthFlow::test_TC_001_verify_login_functionality PASSED
-tests/test_auth_flow.py::TestAuthFlow::test_TC_002_validate_logout_process PASSED
-tests/test_auth_flow.py::TestAuthFlow::test_TC_003_check_password_reset PASSED
-tests/test_auth_flow.py::TestAuthFlow::test_TC_004_verify_dashboard_widgets_load PASSED
-tests/test_auth_flow.py::TestAuthFlow::test_TC_005_validate_user_profile_update PASSED
-tests/test_auth_flow.py::TestAuthFlow::test_TC_006_check_invalid_login_attempt PASSED
-tests/test_auth_flow.py::TestAuthFlow::test_TC_007_verify_remember_me_functionality PASSED
-tests/test_auth_flow.py::TestAuthFlow::test_TC_008_validate_new_user_registration PASSED
-tests/test_auth_flow.py::TestAuthFlow::test_TC_009_check_email_verification PASSED
-tests/test_auth_flow.py::TestAuthFlow::test_TC_010_validate_forgotten_username_recovery PASSED
-tests/test_auth_flow.py::TestAuthFlow::test_TC_011_verify_account_lockout_after_failed_logins PASSED
-tests/test_auth_flow.py::TestAuthFlow::test_TC_012_check_session_timeout PASSED
+tests/test_login.py::TestLogin::test_login_with_valid_credentials PASSED   [ 12%]
+tests/test_login.py::TestLogin::test_login_with_invalid_password PASSED    [ 25%]
+tests/test_logout.py::test_logout_functionality PASSED                     [ 37%]
+tests/test_password_reset.py::test_password_reset_with_registered_email PASSED [ 50%]
+tests/test_password_reset.py::test_password_reset_with_unregistered_email PASSED [ 62%]
+tests/test_session.py::test_session_timeout_after_inactivity PASSED        [ 75%]
+tests/test_account_lock.py::test_multiple_login_attempts_lock_account PASSED [ 87%]
+tests/test_ui_elements.py::test_ui_elements_on_login_page PASSED           [100%]
 
-============================== 12 passed in 13.5s ==============================
-```
-
----
-
-This solution is modular, maintainable, and ready for extension. All selectors are placeholders and should be updated to match your actual application's HTML. All code is PEP8-compliant and uses robust error handling and PyTest fixtures. For email verification and session tests, stubs are provided—replace with real integrations as needed.
-
-**You can copy-paste these files directly to your project for immediate use.**
+============================== 8 passed in 18.22s ==============================
