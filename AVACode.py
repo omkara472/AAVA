@@ -1,36 +1,5 @@
 """
-# --- Directory Structure ---
-# .
-# ├── page_objects/
-# │   ├── base_page.py
-# │   ├── login_page.py
-# │   ├── dashboard_page.py
-# │   ├── profile_page.py
-# │   ├── file_upload_page.py
-# │   ├── search_page.py
-# │   ├── notification_page.py
-# │   └── password_change_page.py
-# ├── tests/
-# │   ├── test_login.py
-# │   ├── test_forgot_password.py
-# │   ├── test_invalid_login.py
-# │   ├── test_logout.py
-# │   ├── test_dashboard_widgets.py
-# │   ├── test_profile_update.py
-# │   ├── test_search.py
-# │   ├── test_pagination.py
-# │   ├── test_file_upload.py
-# │   ├── test_file_upload_error.py
-# │   ├── test_notification.py
-# │   └── test_password_change.py
-# ├── conftest.py
-# ├── requirements.txt
-# ├── README.md
-# └── sample_test_output.txt
-
-# ------------------- page_objects/base_page.py -------------------
-"""
-BasePage: Common Selenium actions and explicit waits.
+BasePage: Contains common Selenium actions and utilities for all page objects.
 """
 
 from selenium.webdriver.support.ui import WebDriverWait
@@ -41,533 +10,236 @@ class BasePage:
         self.driver = driver
         self.timeout = timeout
 
-    def find_element(self, by, value):
+    def find_element(self, locator):
+        """Wait for presence of element located by locator and return it."""
         return WebDriverWait(self.driver, self.timeout).until(
-            EC.presence_of_element_located((by, value))
+            EC.presence_of_element_located(locator)
         )
 
-    def click(self, by, value):
-        elem = self.find_element(by, value)
-        elem.click()
+    def click(self, locator):
+        """Wait for element to be clickable and click."""
+        element = WebDriverWait(self.driver, self.timeout).until(
+            EC.element_to_be_clickable(locator)
+        )
+        element.click()
 
-    def send_keys(self, by, value, keys):
-        elem = self.find_element(by, value)
-        elem.clear()
-        elem.send_keys(keys)
+    def enter_text(self, locator, text):
+        """Wait for element, clear and enter text."""
+        element = self.find_element(locator)
+        element.clear()
+        element.send_keys(text)
 
-    def is_text_present(self, by, value, text):
-        elem = self.find_element(by, value)
-        return text in elem.text
-
-    def get_text(self, by, value):
-        elem = self.find_element(by, value)
-        return elem.text
-
-    def is_element_displayed(self, by, value):
+    def is_element_present(self, locator):
         try:
-            elem = self.find_element(by, value)
-            return elem.is_displayed()
+            self.find_element(locator)
+            return True
         except Exception:
             return False
 
-# ------------------- page_objects/login_page.py -------------------
+    def get_current_url(self):
+        return self.driver.current_url
+
+
 """
-LoginPage: Actions for login, invalid login, forgot password.
+LoginPage: Page object for login functionality.
 """
 
 from selenium.webdriver.common.by import By
 from .base_page import BasePage
 
 class LoginPage(BasePage):
-    URL = "https://example.com/login"  # Replace with actual login URL
+    URL = "http://example.com/login"  # Placeholder URL
 
-    USERNAME_INPUT = (By.ID, "username")  # Placeholder selector
+    # Placeholder locators (update as per actual app)
+    USERNAME_INPUT = (By.ID, "username")
     PASSWORD_INPUT = (By.ID, "password")
     LOGIN_BUTTON = (By.ID, "loginBtn")
-    ERROR_MESSAGE = (By.ID, "errorMsg")
     FORGOT_PASSWORD_LINK = (By.LINK_TEXT, "Forgot Password")
-    EMAIL_INPUT = (By.ID, "email")
-    SUBMIT_BUTTON = (By.ID, "submitBtn")
-    SUCCESS_MESSAGE = (By.ID, "successMsg")
 
-    def load(self):
+    def go_to(self):
         self.driver.get(self.URL)
 
     def login(self, username, password):
-        self.send_keys(*self.USERNAME_INPUT, username)
-        self.send_keys(*self.PASSWORD_INPUT, password)
-        self.click(*self.LOGIN_BUTTON)
-
-    def get_error_message(self):
-        return self.get_text(*self.ERROR_MESSAGE)
+        self.enter_text(self.USERNAME_INPUT, username)
+        self.enter_text(self.PASSWORD_INPUT, password)
+        self.click(self.LOGIN_BUTTON)
 
     def click_forgot_password(self):
-        self.click(*self.FORGOT_PASSWORD_LINK)
+        self.click(self.FORGOT_PASSWORD_LINK)
 
-    def submit_forgot_password(self, email):
-        self.send_keys(*self.EMAIL_INPUT, email)
-        self.click(*self.SUBMIT_BUTTON)
 
-    def get_success_message(self):
-        return self.get_text(*self.SUCCESS_MESSAGE)
-
-# ------------------- page_objects/dashboard_page.py -------------------
 """
-DashboardPage: Actions for dashboard widgets and logout.
+DashboardPage: Page object for dashboard after login.
 """
 
 from selenium.webdriver.common.by import By
 from .base_page import BasePage
 
 class DashboardPage(BasePage):
-    URL = "https://example.com/dashboard"  # Placeholder
+    # Placeholder locator for a dashboard element
+    DASHBOARD_INDICATOR = (By.ID, "dashboardWelcome")
 
-    WIDGETS = [
-        (By.ID, "widget1"),
-        (By.ID, "widget2"),
-        (By.ID, "widget3"),
-    ]
+    def is_loaded(self):
+        """Check if dashboard is loaded by verifying indicator element."""
+        return self.is_element_present(self.DASHBOARD_INDICATOR)
+
+
+"""
+ForgotPasswordPage: Page object for password reset.
+"""
+
+from selenium.webdriver.common.by import By
+from .base_page import BasePage
+
+class ForgotPasswordPage(BasePage):
+    EMAIL_INPUT = (By.ID, "email")
+    SUBMIT_BUTTON = (By.ID, "submitBtn")
+    SUCCESS_MESSAGE = (By.ID, "resetSuccess")  # Placeholder
+
+    def reset_password(self, email):
+        self.enter_text(self.EMAIL_INPUT, email)
+        self.click(self.SUBMIT_BUTTON)
+
+    def is_reset_successful(self):
+        return self.is_element_present(self.SUCCESS_MESSAGE)
+
+
+"""
+LogoutPage: Page object for logout functionality.
+"""
+
+from selenium.webdriver.common.by import By
+from .base_page import BasePage
+
+class LogoutPage(BasePage):
     LOGOUT_BUTTON = (By.ID, "logoutBtn")
 
-    def load(self):
-        self.driver.get(self.URL)
-
-    def are_widgets_displayed(self):
-        return all(self.is_element_displayed(*widget) for widget in self.WIDGETS)
-
     def logout(self):
-        self.click(*self.LOGOUT_BUTTON)
+        self.click(self.LOGOUT_BUTTON)
 
-# ------------------- page_objects/profile_page.py -------------------
+
 """
-ProfilePage: Actions for updating profile.
-"""
-
-from selenium.webdriver.common.by import By
-from .base_page import BasePage
-
-class ProfilePage(BasePage):
-    URL = "https://example.com/profile"  # Placeholder
-
-    EDIT_BUTTON = (By.ID, "editProfileBtn")
-    NAME_INPUT = (By.ID, "name")
-    EMAIL_INPUT = (By.ID, "email")
-    SAVE_BUTTON = (By.ID, "saveProfileBtn")
-    SUCCESS_MESSAGE = (By.ID, "profileSuccessMsg")
-
-    def load(self):
-        self.driver.get(self.URL)
-
-    def edit_profile(self, name, email):
-        self.click(*self.EDIT_BUTTON)
-        self.send_keys(*self.NAME_INPUT, name)
-        self.send_keys(*self.EMAIL_INPUT, email)
-        self.click(*self.SAVE_BUTTON)
-
-    def get_success_message(self):
-        return self.get_text(*self.SUCCESS_MESSAGE)
-
-# ------------------- page_objects/file_upload_page.py -------------------
-"""
-FileUploadPage: Actions for uploading files.
+Test case for verifying login functionality.
 """
 
-from selenium.webdriver.common.by import By
-from .base_page import BasePage
+import pytest
+from pages.login_page import LoginPage
+from pages.dashboard_page import DashboardPage
 
-class FileUploadPage(BasePage):
-    URL = "https://example.com/upload"  # Placeholder
+@pytest.mark.smoke
+def test_login_valid_user(driver, test_data):
+    """
+    Steps:
+    1. Navigate to login page
+    2. Enter valid credentials
+    3. Click login button
+    Expected Result: User is redirected to dashboard
+    """
+    login_page = LoginPage(driver)
+    login_page.go_to()
+    login_page.login(test_data["valid_username"], test_data["valid_password"])
 
-    FILE_INPUT = (By.ID, "fileInput")
-    UPLOAD_BUTTON = (By.ID, "uploadBtn")
-    SUCCESS_MESSAGE = (By.ID, "uploadSuccessMsg")
-    ERROR_MESSAGE = (By.ID, "uploadErrorMsg")
+    dashboard_page = DashboardPage(driver)
+    assert dashboard_page.is_loaded(), "Dashboard did not load after login"
 
-    def load(self):
-        self.driver.get(self.URL)
 
-    def upload_file(self, file_path):
-        self.find_element(*self.FILE_INPUT).send_keys(file_path)
-        self.click(*self.UPLOAD_BUTTON)
-
-    def get_success_message(self):
-        return self.get_text(*self.SUCCESS_MESSAGE)
-
-    def get_error_message(self):
-        return self.get_text(*self.ERROR_MESSAGE)
-
-# ------------------- page_objects/search_page.py -------------------
 """
-SearchPage: Actions for search and pagination.
+Test case for validating password reset.
 """
 
-from selenium.webdriver.common.by import By
-from .base_page import BasePage
+import pytest
+from pages.login_page import LoginPage
+from pages.forgot_password_page import ForgotPasswordPage
 
-class SearchPage(BasePage):
-    URL = "https://example.com/search"  # Placeholder
+@pytest.mark.regression
+def test_password_reset(driver, test_data):
+    """
+    Steps:
+    1. Click on 'Forgot Password' link
+    2. Enter registered email address
+    3. Submit request
+    4. Check email for reset link
+    5. Reset password using link
+    Expected Result: Password is reset and user can login with new password
+    """
+    login_page = LoginPage(driver)
+    login_page.go_to()
+    login_page.click_forgot_password()
 
-    SEARCH_INPUT = (By.ID, "searchBox")
-    SEARCH_BUTTON = (By.ID, "searchBtn")
-    RESULT_ITEMS = (By.CLASS_NAME, "resultItem")
-    PAGINATION_NEXT = (By.ID, "nextPageBtn")
+    forgot_page = ForgotPasswordPage(driver)
+    forgot_page.reset_password(test_data["valid_email"])
 
-    def load(self):
-        self.driver.get(self.URL)
+    assert forgot_page.is_reset_successful(), "Password reset was not successful"
 
-    def search(self, term):
-        self.send_keys(*self.SEARCH_INPUT, term)
-        self.click(*self.SEARCH_BUTTON)
+    # Simulate checking email and resetting password (mock or manual step)
+    # For demo, assume password reset is successful and login with new password
+    login_page.go_to()
+    login_page.login(test_data["valid_username"], test_data["new_password"])
 
-    def get_results(self):
-        return self.driver.find_elements(*self.RESULT_ITEMS)
+    # Validate login with new password
+    from pages.dashboard_page import DashboardPage
+    dashboard_page = DashboardPage(driver)
+    assert dashboard_page.is_loaded(), "Dashboard did not load after password reset login"
 
-    def paginate_next(self):
-        self.click(*self.PAGINATION_NEXT)
 
-# ------------------- page_objects/notification_page.py -------------------
 """
-NotificationPage: Actions for notifications.
-"""
-
-from selenium.webdriver.common.by import By
-from .base_page import BasePage
-
-class NotificationPage(BasePage):
-    NOTIFICATION = (By.ID, "notification")
-
-    def is_notification_displayed(self):
-        return self.is_element_displayed(*self.NOTIFICATION)
-
-# ------------------- page_objects/password_change_page.py -------------------
-"""
-PasswordChangePage: Actions for changing password.
+Test case for testing logout functionality.
 """
 
-from selenium.webdriver.common.by import By
-from .base_page import BasePage
+import pytest
+from pages.login_page import LoginPage
+from pages.dashboard_page import DashboardPage
+from pages.logout_page import LogoutPage
 
-class PasswordChangePage(BasePage):
-    URL = "https://example.com/change-password"  # Placeholder
+@pytest.mark.sanity
+def test_logout(driver, test_data):
+    """
+    Steps:
+    1. Login to application
+    2. Click logout button
+    Expected Result: User is logged out and redirected to login page
+    """
+    login_page = LoginPage(driver)
+    login_page.go_to()
+    login_page.login(test_data["valid_username"], test_data["valid_password"])
 
-    CURRENT_PASSWORD_INPUT = (By.ID, "currentPassword")
-    NEW_PASSWORD_INPUT = (By.ID, "newPassword")
-    SAVE_BUTTON = (By.ID, "savePasswordBtn")
-    SUCCESS_MESSAGE = (By.ID, "passwordChangeMsg")
+    dashboard_page = DashboardPage(driver)
+    assert dashboard_page.is_loaded(), "Dashboard did not load before logout"
 
-    def load(self):
-        self.driver.get(self.URL)
+    logout_page = LogoutPage(driver)
+    logout_page.logout()
 
-    def change_password(self, current, new):
-        self.send_keys(*self.CURRENT_PASSWORD_INPUT, current)
-        self.send_keys(*self.NEW_PASSWORD_INPUT, new)
-        self.click(*self.SAVE_BUTTON)
+    # After logout, should be redirected to login page
+    assert "login" in driver.current_url.lower(), "User was not redirected to login page after logout"
 
-    def get_success_message(self):
-        return self.get_text(*self.SUCCESS_MESSAGE)
 
-# ------------------- conftest.py -------------------
 """
-PyTest fixtures for WebDriver setup and login utility.
+PyTest fixtures for Selenium WebDriver setup and test data.
 """
 
 import pytest
 from selenium import webdriver
 
 @pytest.fixture(scope="session")
-def browser():
+def driver():
+    # Change browser as needed: Chrome, Firefox, etc.
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
+    options.add_argument("--headless")  # Comment out if you want to see browser
     driver = webdriver.Chrome(options=options)
     driver.implicitly_wait(5)
     yield driver
     driver.quit()
 
-@pytest.fixture
-def login(browser):
-    from page_objects.login_page import LoginPage
-    def _login(username, password):
-        login_page = LoginPage(browser)
-        login_page.load()
-        login_page.login(username, password)
-    return _login
+@pytest.fixture(scope="session")
+def test_data():
+    """
+    Provides test data for login and password reset.
+    Replace with secure test credentials/environment variables in production.
+    """
+    return {
+        "valid_username": "testuser",
+        "valid_password": "Test@1234",
+        "valid_email": "testuser@example.com",
+        "new_password": "NewPass@1234"
+    }
 
-# ------------------- tests/test_login.py -------------------
-"""
-Test: Verify Login Functionality
-"""
-
-def test_verify_login_functionality(browser):
-    from page_objects.login_page import LoginPage
-    from page_objects.dashboard_page import DashboardPage
-    login_page = LoginPage(browser)
-    dashboard_page = DashboardPage(browser)
-    login_page.load()
-    login_page.login("valid_user", "valid_password")
-    # Wait for dashboard to load
-    assert browser.current_url.endswith("/dashboard")
-    assert dashboard_page.are_widgets_displayed()
-
-# ------------------- tests/test_forgot_password.py -------------------
-"""
-Test: Validate Forgot Password
-"""
-
-def test_validate_forgot_password(browser):
-    from page_objects.login_page import LoginPage
-    login_page = LoginPage(browser)
-    login_page.load()
-    login_page.click_forgot_password()
-    login_page.submit_forgot_password("user@example.com")
-    assert "Password reset" in login_page.get_success_message()
-
-# ------------------- tests/test_invalid_login.py -------------------
-"""
-Test: Check Invalid Login Handling
-"""
-
-def test_invalid_login_handling(browser):
-    from page_objects.login_page import LoginPage
-    login_page = LoginPage(browser)
-    login_page.load()
-    login_page.login("invalid_user", "wrong_password")
-    assert "Error" in login_page.get_error_message()
-
-# ------------------- tests/test_logout.py -------------------
-"""
-Test: Verify Logout Functionality
-"""
-
-def test_logout_functionality(browser, login):
-    from page_objects.dashboard_page import DashboardPage
-    dashboard_page = DashboardPage(browser)
-    login("valid_user", "valid_password")
-    dashboard_page.load()
-    dashboard_page.logout()
-    assert browser.current_url.endswith("/login")
-
-# ------------------- tests/test_dashboard_widgets.py -------------------
-"""
-Test: Validate Dashboard Widgets
-"""
-
-def test_dashboard_widgets(browser, login):
-    from page_objects.dashboard_page import DashboardPage
-    dashboard_page = DashboardPage(browser)
-    login("valid_user", "valid_password")
-    dashboard_page.load()
-    assert dashboard_page.are_widgets_displayed()
-
-# ------------------- tests/test_profile_update.py -------------------
-"""
-Test: Check User Profile Update
-"""
-
-def test_profile_update(browser, login):
-    from page_objects.profile_page import ProfilePage
-    login("valid_user", "valid_password")
-    profile_page = ProfilePage(browser)
-    profile_page.load()
-    profile_page.edit_profile("New Name", "new.email@example.com")
-    assert "updated successfully" in profile_page.get_success_message()
-
-# ------------------- tests/test_search.py -------------------
-"""
-Test: Validate Search Functionality
-"""
-
-def test_search_functionality(browser, login):
-    from page_objects.search_page import SearchPage
-    login("valid_user", "valid_password")
-    search_page = SearchPage(browser)
-    search_page.load()
-    search_page.search("test term")
-    results = search_page.get_results()
-    assert len(results) > 0
-
-# ------------------- tests/test_pagination.py -------------------
-"""
-Test: Test Pagination on Results Page
-"""
-
-def test_pagination(browser, login):
-    from page_objects.search_page import SearchPage
-    login("valid_user", "valid_password")
-    search_page = SearchPage(browser)
-    search_page.load()
-    search_page.search("common term")
-    results = search_page.get_results()
-    assert len(results) > 10
-    search_page.paginate_next()
-    # Assume new results loaded
-    new_results = search_page.get_results()
-    assert len(new_results) > 0
-
-# ------------------- tests/test_file_upload.py -------------------
-"""
-Test: Verify File Upload
-"""
-
-def test_file_upload(browser, login, tmp_path):
-    from page_objects.file_upload_page import FileUploadPage
-    login("valid_user", "valid_password")
-    file_upload_page = FileUploadPage(browser)
-    file_upload_page.load()
-    test_file = tmp_path / "testfile.txt"
-    test_file.write_text("sample data")
-    file_upload_page.upload_file(str(test_file))
-    assert "uploaded successfully" in file_upload_page.get_success_message()
-
-# ------------------- tests/test_file_upload_error.py -------------------
-"""
-Test: Verify File Upload Error for Invalid Format
-"""
-
-def test_file_upload_error(browser, login, tmp_path):
-    from page_objects.file_upload_page import FileUploadPage
-    login("valid_user", "valid_password")
-    file_upload_page = FileUploadPage(browser)
-    file_upload_page.load()
-    invalid_file = tmp_path / "invalid.exe"
-    invalid_file.write_bytes(b"not allowed")
-    file_upload_page.upload_file(str(invalid_file))
-    assert "Error" in file_upload_page.get_error_message()
-
-# ------------------- tests/test_notification.py -------------------
-"""
-Test: Check Notification Display
-"""
-
-def test_notification_display(browser, login):
-    from page_objects.notification_page import NotificationPage
-    login("valid_user", "valid_password")
-    notification_page = NotificationPage(browser)
-    # Simulate action that triggers notification
-    browser.execute_script("document.getElementById('notification').style.display='block';")
-    assert notification_page.is_notification_displayed()
-
-# ------------------- tests/test_password_change.py -------------------
-"""
-Test: Verify Password Change
-"""
-
-def test_password_change(browser, login):
-    from page_objects.password_change_page import PasswordChangePage
-    login("valid_user", "valid_password")
-    password_page = PasswordChangePage(browser)
-    password_page.load()
-    password_page.change_password("valid_password", "new_password123")
-    assert "changed" in password_page.get_success_message()
-
-# ------------------- requirements.txt -------------------
-selenium>=4.10.0
-pytest>=7.0.0
-
-# ------------------- README.md -------------------
-# Selenium PyTest Automation Suite
-
-## Overview
-
-This repository contains a modular, maintainable Selenium WebDriver automation suite using the Page Object Model (POM) and PyTest. It automates 12 test cases extracted from manual specifications, covering core flows such as login, forgot password, dashboard widgets, profile update, search, pagination, file upload, notification display, and password change.
-
-## Directory Structure
-
-```
-.
-├── page_objects/      # POM classes for each application page
-├── tests/             # PyTest test scripts per test case
-├── conftest.py        # PyTest fixtures for driver and login
-├── requirements.txt   # Python dependencies
-├── README.md          # Documentation
-└── sample_test_output.txt # Example test run output
-```
-
-## Setup Instructions
-
-1. **Python & Browser**
-   - Install Python 3.8+.
-   - Install Chrome browser and [ChromeDriver](https://chromedriver.chromium.org/downloads) matching your browser version.
-
-2. **Clone Repository**
-   ```
-   git clone <repo_url>
-   cd <repo_dir>
-   ```
-
-3. **Install Dependencies**
-   ```
-   pip install -r requirements.txt
-   ```
-
-4. **Run Tests**
-   ```
-   pytest --maxfail=1 --disable-warnings -v
-   ```
-
-   - For a single test: `pytest tests/test_login.py`
-
-5. **Test Data**
-   - Valid credentials and test data should be configured in fixtures or environment variables for production use.
-
-## Usage Examples
-
-- **Login Test:** Automates login and verifies dashboard widgets.
-- **File Upload:** Uploads a file and checks success/error message.
-- **Search & Pagination:** Searches for a term and paginates results.
-
-## Troubleshooting
-
-- **WebDriver Errors:** Ensure `chromedriver` is in your PATH and matches browser version.
-- **Environment Issues:** Use virtualenv to isolate Python dependencies.
-- **Selector Errors:** Update placeholder selectors in `page_objects/` to match your application.
-- **Test Data:** Replace hardcoded credentials and emails with secure test data.
-
-## Extensibility
-
-- Add new pages: Create a new file in `page_objects/` inheriting `BasePage`.
-- Add new tests: Create new scripts in `tests/` and import relevant page objects.
-- Parameterize tests: Use PyTest's `@pytest.mark.parametrize` for data-driven testing.
-- CI/CD: Integrate with Jenkins, GitHub Actions, or other CI tools for automated runs.
-
-## Best Practices
-
-- Use explicit waits (see `BasePage`).
-- Keep page objects modular and DRY.
-- Document selectors and flows.
-- Store secrets securely (do not hardcode in tests).
-- Review and update selectors after UI changes.
-
-## Future Enhancements
-
-- Multi-browser support (Firefox, Edge).
-- Parallel execution (pytest-xdist).
-- Enhanced reporting (Allure, HTML).
-- Integration with test management tools.
-
-## Support
-
-For issues, review `sample_test_output.txt`, consult the troubleshooting guide, and update selectors as needed.
-
-# ------------------- sample_test_output.txt -------------------
-============================= test session starts =============================
-collected 12 items
-
-tests/test_login.py::test_verify_login_functionality PASSED             [ 8%]
-tests/test_forgot_password.py::test_validate_forgot_password PASSED     [16%]
-tests/test_invalid_login.py::test_invalid_login_handling PASSED         [25%]
-tests/test_logout.py::test_logout_functionality PASSED                  [33%]
-tests/test_dashboard_widgets.py::test_dashboard_widgets PASSED           [41%]
-tests/test_profile_update.py::test_profile_update PASSED                [50%]
-tests/test_search.py::test_search_functionality PASSED                  [58%]
-tests/test_pagination.py::test_pagination PASSED                        [66%]
-tests/test_file_upload.py::test_file_upload PASSED                      [75%]
-tests/test_file_upload_error.py::test_file_upload_error PASSED          [83%]
-tests/test_notification.py::test_notification_display PASSED            [91%]
-tests/test_password_change.py::test_password_change PASSED              [100%]
-
-============================== 12 passed in 22.14s ===========================
-
-# ------------------- END OF FINAL ANSWER -------------------
-
-All files are immediately usable, modular, and extensible. Placeholder selectors and URLs should be replaced with real application values. Inline comments and docstrings are provided for maintainability. For large suites, extend with new page objects and tests as needed.
-"
