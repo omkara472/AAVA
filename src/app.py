@@ -1,11 +1,4 @@
-# test_scrum_6_login.py
-
-"""
-Production-ready Selenium automation script generated from Jira SCRUM-6 test case.
-- Scenario: Login functionality test
-- Source: https://omkarmareedu472.atlassian.net/browse/SCRUM-6
-- Attachments: login_screen.png (refer to documentation for usage)
-"""
+# test_registration_workflow.py
 
 import pytest
 from selenium import webdriver
@@ -14,10 +7,11 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import logging
+import os
 
 # Configure logging
 logging.basicConfig(
-    filename='test_scrum_6.log',
+    filename='test_registration_workflow.log',
     level=logging.INFO,
     format='%(asctime)s %(levelname)s %(message)s'
 )
@@ -25,72 +19,83 @@ logging.basicConfig(
 @pytest.fixture(scope="module")
 def driver():
     """
-    Pytest fixture for Selenium WebDriver setup and teardown.
+    Pytest fixture to initialize and teardown Selenium WebDriver.
     Uses Chrome in headless mode for CI/CD compatibility.
     """
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
     options.add_argument('--disable-gpu')
     options.add_argument('--window-size=1920,1080')
-    service = Service()  # Default ChromeDriver path, ensure chromedriver is in PATH
+    service = Service()
+    driver = webdriver.Chrome(options=options, service=service)
+    yield driver
+    driver.quit()
+
+def wait_for_element(driver, selector, timeout=10):
+    """
+    Wait for element to be present in DOM and visible.
+    """
     try:
-        driver = webdriver.Chrome(service=service, options=options)
-        logging.info("WebDriver started successfully.")
-        yield driver
+        element = WebDriverWait(driver, timeout).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, selector))
+        )
+        return element
     except Exception as e:
-        logging.error(f"WebDriver initialization failed: {e}")
+        logging.error(f"Timeout waiting for element '{selector}': {e}")
         raise
-    finally:
-        driver.quit()
-        logging.info("WebDriver closed.")
 
-def test_scrum_6_login(driver):
+def test_registration_workflow(driver):
     """
-    Test Case: SCRUM-6 - Login Test
+    Test Case: Verify user registration workflow
     Steps:
-      1. Open the application
-      2. Navigate to the login page
-      3. Enter valid credentials
-      4. Click the login button
-    Expected Result: User is successfully logged in and redirected to the dashboard.
-    Tags: login, smoke, regression
+      1. Navigate to the registration page
+      2. Enter valid user details (name, email, password)
+      3. Submit the registration form
+    Expected Result:
+      User receives confirmation email and is able to log in
     """
     try:
-        # Step 1: Open the application (Assume base URL is provided)
-        base_url = "https://example.com"  # Replace with actual application URL
-        driver.get(base_url)
-        logging.info(f"Opened application URL: {base_url}")
+        # Step 1: Navigate to the registration page
+        registration_url = "https://example.com/register"  # Replace with actual URL
+        driver.get(registration_url)
+        logging.info("Navigated to registration page.")
 
-        # Step 2: Navigate to the login page
-        login_url = f"{base_url}/login"
-        driver.get(login_url)
-        logging.info(f"Navigated to login page: {login_url}")
+        # Step 2: Enter valid user details
+        # NOTE: Update selectors as per actual application
+        name_selector = "#name"
+        email_selector = "#email"
+        password_selector = "#password"
+        submit_selector = "#register-button"
 
-        # Step 3: Enter valid credentials
-        WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "#username"))
-        )
-        driver.find_element(By.CSS_SELECTOR, "#username").send_keys("testuser")
-        logging.info("Entered username.")
+        name = "Test User"
+        email = "testuser@example.com"
+        password = "SecurePass123!"
 
-        driver.find_element(By.CSS_SELECTOR, "#password").send_keys("password123")
-        logging.info("Entered password.")
+        wait_for_element(driver, name_selector).send_keys(name)
+        wait_for_element(driver, email_selector).send_keys(email)
+        wait_for_element(driver, password_selector).send_keys(password)
+        logging.info("Entered user details.")
 
-        # Step 4: Click the login button
-        driver.find_element(By.CSS_SELECTOR, "#login-button").click()
-        logging.info("Clicked login button.")
+        # Step 3: Submit the registration form
+        wait_for_element(driver, submit_selector).click()
+        logging.info("Submitted registration form.")
 
-        # Assertion: User is successfully logged in and redirected to the dashboard
-        WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "#welcome-message"))
-        )
-        welcome_text = driver.find_element(By.CSS_SELECTOR, "#welcome-message").text
-        assert welcome_text == "Welcome, testuser!", \
-            f"Expected welcome message not found. Actual: '{welcome_text}'"
-        logging.info("Login assertion passed.")
+        # Step 4: Assert confirmation message
+        confirmation_selector = "#confirmation-message"
+        confirmation_text_expected = "Registration successful! Please check your email."
 
+        confirmation_element = wait_for_element(driver, confirmation_selector)
+        confirmation_text_actual = confirmation_element.text.strip()
+        assert confirmation_text_actual == confirmation_text_expected, \
+            f"Expected confirmation '{confirmation_text_expected}', got '{confirmation_text_actual}'"
+        logging.info("Confirmed registration success.")
+
+        # Step 5: (Optional) Attempt login to verify user creation
+        # This step can be implemented if login page and flow are available.
+
+    except AssertionError as ae:
+        logging.error(f"Assertion failed: {ae}")
+        pytest.fail(str(ae))
     except Exception as e:
-        logging.error(f"Test SCRUM-6 failed: {e}")
-        pytest.fail(f"Test SCRUM-6 failed: {e}")
-
-# Documentation, configuration, troubleshooting, and test report are included in the operation log and README.
+        logging.error(f"Unexpected error: {e}")
+        pytest.fail(f"Test failed due to unexpected error: {e}")
