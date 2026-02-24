@@ -1,5 +1,5 @@
 import pytest
-from src import app
+from app import app
 
 def test_driver_returns_value():
     result = app.driver()
