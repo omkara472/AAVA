@@ -1,11 +1,11 @@
 import pytest
 from src import app
 
-def test_driver():
-    result = app.driver()
+def test_test_valid_login_returns_value():
+    result = app.test_valid_login(None)
     assert result is not None
 
-def test_test_scrum_6_login():
-    result = app.test_scrum_6_login(None)
-    assert result is not None
 
+def test_test_invalid_login_returns_value():
+    result = app.test_invalid_login(None, None, None)
+    assert result is not None
