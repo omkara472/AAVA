@@ -1,4 +1,4 @@
-src/test_login_selenium.py
+#src/test_login_selenium.py
 
 import pytest
 from selenium import webdriver
