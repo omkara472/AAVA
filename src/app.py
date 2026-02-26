@@ -1,96 +1,98 @@
-# test_scrum_6_login.py
-
-"""
-Production-ready Selenium automation script generated from Jira SCRUM-6 test case.
-- Scenario: Login functionality test
-- Source: https://omkarmareedu472.atlassian.net/browse/SCRUM-6
-- Attachments: login_screen.png (refer to documentation for usage)
-"""
-
+# test_jira_cases.py
 import pytest
+import logging
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import logging
 
 # Configure logging
-logging.basicConfig(
-    filename='test_scrum_6.log',
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(message)s'
-)
+logging.basicConfig(filename='test_execution.log', level=logging.INFO,
+                    format='%(asctime)s %(levelname)s %(message)s')
 
 @pytest.fixture(scope="module")
 def driver():
-    """
-    Pytest fixture for Selenium WebDriver setup and teardown.
-    Uses Chrome in headless mode for CI/CD compatibility.
-    """
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--window-size=1920,1080')
-    service = Service()  # Default ChromeDriver path, ensure chromedriver is in PATH
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--window-size=1920,1080')
+    driver = webdriver.Chrome(options=chrome_options)
+    yield driver
+    driver.quit()
+
+def wait_for_element(driver, selector, timeout=10):
     try:
-        driver = webdriver.Chrome(service=service, options=options)
-        logging.info("WebDriver started successfully.")
-        yield driver
+        element = WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+        )
+        return element
     except Exception as e:
-        logging.error(f"WebDriver initialization failed: {e}")
+        logging.error(f"Element with selector '{selector}' not found: {e}")
         raise
-    finally:
-        driver.quit()
-        logging.info("WebDriver closed.")
 
-def test_scrum_6_login(driver):
-    """
-    Test Case: SCRUM-6 - Login Test
-    Steps:
-      1. Open the application
-      2. Navigate to the login page
-      3. Enter valid credentials
-      4. Click the login button
-    Expected Result: User is successfully logged in and redirected to the dashboard.
-    Tags: login, smoke, regression
-    """
+@pytest.mark.parametrize("test_case", [
+    {
+        "id": "SCRUM-6",
+        "title": "Verify login functionality",
+        "description": "Ensure user can log in with valid credentials",
+        "steps": [
+            {"action": "open_url", "value": "https://example.com/login"},
+            {"action": "input", "selector": "#username", "value": "testuser"},
+            {"action": "input", "selector": "#password", "value": "password123"},
+            {"action": "click", "selector": "#login-button"},
+            {"action": "assert", "selector": "#dashboard", "expected": "Dashboard"}
+        ],
+        "expectedResult": "User is redirected to dashboard",
+        "tags": ["login", "authentication"],
+        "attachments": ["screenshot1.png"]
+    },
+    {
+        "id": "SCRUM-7",
+        "title": "Validate password reset",
+        "description": "Check password reset functionality",
+        "steps": [
+            {"action": "open_url", "value": "https://example.com/login"},
+            {"action": "click", "selector": "#forgot-password"},
+            {"action": "input", "selector": "#email", "value": "user@example.com"},
+            {"action": "click", "selector": "#reset-submit"},
+            {"action": "assert", "selector": "#notification", "expected": "Password reset email is sent"}
+        ],
+        "expectedResult": "Password reset email is sent",
+        "tags": ["password", "reset"],
+        "attachments": []
+    }
+])
+def test_jira_case(driver, test_case):
+    logging.info(f"Executing Test Case: {test_case['id']} - {test_case['title']}")
     try:
-        # Step 1: Open the application (Assume base URL is provided)
-        base_url = "https://example.com"  # Replace with actual application URL
-        driver.get(base_url)
-        logging.info(f"Opened application URL: {base_url}")
-
-        # Step 2: Navigate to the login page
-        login_url = f"{base_url}/login"
-        driver.get(login_url)
-        logging.info(f"Navigated to login page: {login_url}")
-
-        # Step 3: Enter valid credentials
-        WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "#username"))
-        )
-        driver.find_element(By.CSS_SELECTOR, "#username").send_keys("testuser")
-        logging.info("Entered username.")
-
-        driver.find_element(By.CSS_SELECTOR, "#password").send_keys("password123")
-        logging.info("Entered password.")
-
-        # Step 4: Click the login button
-        driver.find_element(By.CSS_SELECTOR, "#login-button").click()
-        logging.info("Clicked login button.")
-
-        # Assertion: User is successfully logged in and redirected to the dashboard
-        WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "#welcome-message"))
-        )
-        welcome_text = driver.find_element(By.CSS_SELECTOR, "#welcome-message").text
-        assert welcome_text == "Welcome, testuser!", \
-            f"Expected welcome message not found. Actual: '{welcome_text}'"
-        logging.info("Login assertion passed.")
-
+        for step in test_case['steps']:
+            action = step.get('action')
+            if action == 'open_url':
+                driver.get(step['value'])
+                logging.info(f"Opened URL: {step['value']}")
+            elif action == 'input':
+                element = wait_for_element(driver, step['selector'])
+                element.clear()
+                element.send_keys(step['value'])
+                logging.info(f"Input '{step['value']}' into '{step['selector']}'")
+            elif action == 'click':
+                element = wait_for_element(driver, step['selector'])
+                element.click()
+                logging.info(f"Clicked element '{step['selector']}'")
+            elif action == 'assert':
+                element = wait_for_element(driver, step['selector'])
+                actual = element.text.strip()
+                expected = step['expected']
+                assert actual == expected, \
+                    f"Assertion failed for '{step['selector']}': expected '{expected}', got '{actual}'"
+                logging.info(f"Asserted '{step['selector']}' text is '{expected}'")
+            else:
+                logging.warning(f"Unknown action '{action}' in step: {step}")
+        logging.info(f"Test Case '{test_case['id']}' PASSED")
+    except AssertionError as ae:
+        logging.error(f"Test Case '{test_case['id']}' FAILED: {ae}")
+        pytest.fail(str(ae))
     except Exception as e:
-        logging.error(f"Test SCRUM-6 failed: {e}")
-        pytest.fail(f"Test SCRUM-6 failed: {e}")
-
-# Documentation, configuration, troubleshooting, and test report are included in the operation log and README.
+        logging.error(f"Test Case '{test_case['id']}' ERROR: {e}")
+        pytest.fail(str(e))
