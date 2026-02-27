@@ -1,11 +1,11 @@
 import pytest
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from src import app
 
-def test_driver():
-    result = app.driver()
+def test_test_google_title_returns_value():
+    result = app.test_google_title()
     assert result is not None
-
-def test_test_scrum_6_login():
-    result = app.test_scrum_6_login(None)
-    assert result is not None
-
