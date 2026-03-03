@@ -1,11 +1,14 @@
-import pytest
 from src import app
 
-def test_driver():
-    result = app.driver()
+
+def test_test_add():
+    result = app.test_add()
     assert result is not None
 
-def test_test_scrum_6_login():
-    result = app.test_scrum_6_login(None)
+def test_test_multiply():
+    result = app.test_multiply()
     assert result is not None
 
+def test_test_divide():
+    result = app.test_divide()
+    assert result is not None
