@@ -56,5 +56,5 @@ def test_add_to_cart(driver):
 # Test Case 4: Verify Cart Button
 def test_cart_button(driver):
     cart = driver.find_element(By.ID, "cart-total")
-    assert cart.is_displayed()"
+    assert cart.is_displayed()
 }
